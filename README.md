@@ -1,8 +1,8 @@
+[English](README.md) | [中文](README.zh-CN.md)
+
 # Agent Control Tower
 
-Orchestrate multiple Claude Code instances from a single terminal via Named Pipes on Windows.
-
-一个 Claude Code Skill，让你在一个终端中持续指挥多个 Claude Code 实例并行执行任务。
+Orchestrate multiple Claude Code instances from a single terminal via Named Pipes on Windows. A [Claude Code Skill](https://docs.anthropic.com/en/docs/claude-code) that turns your current session into a persistent command center for managing agent lifecycles and tasks.
 
 ## How It Works
 
@@ -24,8 +24,6 @@ Claude Code (commander)
 
 Each agent runs in its own Windows Terminal tab with an independent Named Pipe. The commander sends keystrokes via `WriteConsoleInput`, which works reliably with both pwsh interactive mode and Claude Code TUI.
 
-每个 agent 在独立的 Windows Terminal tab 中运行，通过 Named Pipe 接收指令。指挥者通过 `WriteConsoleInput` 注入键盘输入，兼容 pwsh 交互模式和 Claude Code TUI。
-
 ## Requirements
 
 - Windows 10/11
@@ -41,17 +39,15 @@ git clone https://github.com/Cedriccmh/agent-control-tower ~/.claude/skills/agen
 
 Restart Claude Code. The skill auto-triggers when you mention "agent", "worker", "dispatch", or "control tower".
 
-重启 Claude Code 即可使用。提到"开 agent"、"派任务"、"control tower"等关键词时自动触发。
-
 ## Usage
 
-### 1. Check existing agents / 检查现有 agent
+### 1. Check existing agents
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File ~/.claude/skills/agent-control-tower/scripts/pipe-list.ps1
 ```
 
-### 2. Launch an agent / 启动 agent
+### 2. Launch an agent
 
 ```bash
 wt.exe -w 0 new-tab -p "PowerShell" -d "C:\your-project" -- pwsh.exe -NoLogo -NoExit -Command \
@@ -61,13 +57,13 @@ wt.exe -w 0 new-tab -p "PowerShell" -d "C:\your-project" -- pwsh.exe -NoLogo -No
 
 `pipe-server.ps1` automatically starts `claude --dangerously-skip-permissions` after the pipe is ready.
 
-### 3. Send a task / 发送任务
+### 3. Send a task
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File ~/.claude/skills/agent-control-tower/scripts/pipe-send.ps1 -Id agent1 -Message "list all files"
 ```
 
-### 4. Shutdown / 关闭
+### 4. Shutdown
 
 ```powershell
 # Shutdown a specific agent
