@@ -1,7 +1,8 @@
 # pipe-server.ps1 - Named Pipe 后台监听 + 控制台输入注入
 param(
     [Parameter(Mandatory=$true)]
-    [string]$Id
+    [string]$Id,
+    [string]$Name
 )
 
 $PipeName = "claude_agent_$Id"
@@ -119,8 +120,9 @@ public static class ConsoleInjector
                         }
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Console.Error.WriteLine("[pipe-server] " + ex.Message);
                     Thread.Sleep(1000);
                 }
             }
@@ -149,8 +151,32 @@ Register-EngineEvent PowerShell.Exiting -Action {
 
 Write-Host "=== Agent [$Id] ===" -ForegroundColor Cyan
 Write-Host "Pipe: \\.\pipe\$PipeName" -ForegroundColor Yellow
-Write-Host "启动 Claude Code..." -ForegroundColor Green
+
+# Hook 配置检查
+$hooksDir = Join-Path $env:USERPROFILE ".claude\hooks"
+$settingsFile = Join-Path $env:USERPROFILE ".claude\settings.json"
+$missingFiles = @()
+foreach ($h in @("hook-session-start.sh", "hook-stop.sh")) {
+    if (-not (Test-Path (Join-Path $hooksDir $h))) { $missingFiles += $h }
+}
+$settingsOk = $false
+if (Test-Path $settingsFile) {
+    $raw = Get-Content $settingsFile -Raw 2>$null
+    if ($raw -match '"SessionStart"' -and $raw -match '"Stop"') { $settingsOk = $true }
+}
+if ($missingFiles.Count -gt 0 -or -not $settingsOk) {
+    Write-Host "[!] Hook not configured - ready/done signals won't work" -ForegroundColor Red
+    if ($missingFiles.Count -gt 0) { Write-Host "    Missing: $($missingFiles -join ', ')" -ForegroundColor Red }
+    if (-not $settingsOk) { Write-Host "    settings.json missing SessionStart/Stop hooks" -ForegroundColor Red }
+    Write-Host "    See: references/setup.md" -ForegroundColor Red
+}
+
+$displayName = if ($Name) { $Name } else { $Id }
+Write-Host "启动 Claude Code ($displayName)..." -ForegroundColor Green
 Write-Host ""
 
-# 自动启动 Claude Code
-claude --dangerously-skip-permissions
+# 设置 agent ID 环境变量（hook 脚本通过此变量识别 agent 会话）
+$env:CLAUDE_AGENT_ID = $Id
+
+# 自动启动 Claude Code，用 /rename 设置会话名（便于用户识别 tab 用途）
+claude --dangerously-skip-permissions "/rename $displayName"
