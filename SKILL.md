@@ -38,7 +38,8 @@ python "<SCRIPTS>/pipe-list.py"
 wt.exe -w 0 new-tab -p "PowerShell" -d "<工作目录>" -- pwsh.exe -NoLogo -NoExit -Command ". '<SCRIPTS>/pipe-server.ps1' -Id <ID> -Name '<任务主题>'" && wt.exe -w 0 focus-tab -t 0
 ```
 
-- `-Name` 设置 Claude Code 会话名（通过 `/rename`），便于用户在 tab 中识别任务。省略时默认用 ID
+- `-Name` 设置 Claude Code 会话名（通过 `--name` 启动参数），便于用户在 tab 中识别任务。省略时默认用 ID
+- `-Resume` 恢复上次会话，保留完整上下文继续工作（通过 `--resume` 启动参数）
 - `&& focus-tab -t 0` 零延迟切回当前 tab
 - 通过 ready 信号确认就绪后再发任务（见下方信号机制），或等待 **5-8 秒**
 - **首次目录信任**：Claude Code 首次在某目录运行时会弹出信任确认。需发送 `1` 确认后 agent 才能就绪。已信任的目录不再提示
@@ -80,7 +81,18 @@ python "<transcript-viewer的scripts路径>/view_transcript.py" -c "<agent工作
 
 基于 transcript 向用户汇报后再发下一个任务。
 
-### 6. 复用窗口切换任务
+### 6. 恢复会话（Resume）
+
+当 agent 断开或需要续接上次工作时，用 `-Resume` 恢复会话：
+
+```bash
+wt.exe -w 0 new-tab -p "PowerShell" -d "<工作目录>" -- pwsh.exe -NoLogo -NoExit -Command ". '<SCRIPTS>/pipe-server.ps1' -Id <ID> -Name '<任务主题>' -Resume" && wt.exe -w 0 focus-tab -t 0
+```
+
+- 恢复上次会话的完整上下文，agent 可直接继续之前的任务
+- 适用于 agent 意外退出、网络中断后重连等场景
+
+### 7. 复用窗口切换任务
 
 ```bash
 MSYS_NO_PATHCONV=1 python "<SCRIPTS>/pipe-send.py" <ID> "/exit"
@@ -90,7 +102,7 @@ python "<SCRIPTS>/pipe-send.py" <ID> "claude --dangerously-skip-permissions"
 # 等待 ready 信号，或等 5-8 秒（新目录可能触发信任确认，需发 "1"）
 ```
 
-### 7. 关闭 agent
+### 8. 关闭 agent
 
 ```bash
 # 关闭全部（仅在用户要求时）

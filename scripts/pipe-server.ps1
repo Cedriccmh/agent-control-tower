@@ -2,7 +2,8 @@
 param(
     [Parameter(Mandatory=$true)]
     [string]$Id,
-    [string]$Name
+    [string]$Name,
+    [switch]$Resume
 )
 
 $PipeName = "claude_agent_$Id"
@@ -178,5 +179,11 @@ Write-Host ""
 # 设置 agent ID 环境变量（hook 脚本通过此变量识别 agent 会话）
 $env:CLAUDE_AGENT_ID = $Id
 
-# 自动启动 Claude Code，用 /rename 设置会话名（便于用户识别 tab 用途）
-claude --dangerously-skip-permissions "/rename $displayName"
+# 自动启动 Claude Code
+# --name 设置会话名（便于用户识别 tab 用途）
+# -Resume 恢复上次会话（保留上下文继续工作）
+if ($Resume) {
+    claude --dangerously-skip-permissions --resume --name "$displayName"
+} else {
+    claude --dangerously-skip-permissions --name "$displayName"
+}
